@@ -246,7 +246,7 @@ function talk(npcId){
 }
 function dialogAction(action){
  if(action==='questStart')advance(1);
- if(action==='questChapter2'){hero.gold+=180;hero.inventory.push(makeItem(Math.max(2,hero.level),'rare','weapon'));advance(5);toast('REWARD — 180 GOLD + RARE WEAPON');}
+ if(action==='questChapter2'){hero.gold+=180;const reward=makeItem(Math.max(2,hero.level),'rare','weapon');if(hero.inventory.length<25)hero.inventory.push(reward);else drops.push({id:nextId++,x:hero.x+20,y:hero.y,kind:'item',item:reward,born:now});advance(5);toast('REWARD — 180 GOLD + RARE WEAPON');}
  if(action==='questFinish'){hero.gold+=450;if(hero.inventory.length<25)hero.inventory.push(makeItem(Math.max(6,hero.level),'epic'));advance(8);toast('CHAPTER COMPLETE — RELIC OF THE HOLLOW');}
  if(action==='buyFlask'){if(hero.gold<25){toast('NOT ENOUGH GOLD');return;}hero.gold-=25;hero.potions++;tone(700,.028,.1);toast('HEALING FLASK PURCHASED');}
  if(action==='buyCache'){const price=120+hero.level*35;if(hero.gold<price){toast('NOT ENOUGH GOLD');return;}if(hero.inventory.length>=25){toast('INVENTORY FULL');return;}hero.gold-=price;const item=makeItem(hero.level,Math.random()<.2?'epic':'rare');hero.inventory.push(item);toast('RECEIVED '+item.name.toUpperCase());tone(780,.026,.2);}
@@ -265,7 +265,7 @@ function update(dt){
  for(const k of Object.keys(skillCd))skillCd[k]=Math.max(0,skillCd[k]-dt);
  if(zoneTitleUntil<now)$('zoneCaption').style.opacity='0';
  const st=stats();hero.hp=clamp(hero.hp+dt*(hero.hp<st.hp?0.6:0),0,st.hp);hero.mana=clamp(hero.mana+dt*(4.7+hero.attr.spirit*.35)*(1+hero.talents.arcana*.15),0,st.mana);
- const dx=(keys.d||keys.ArrowRight?1:0)-(keys.a||keys.ArrowLeft?1:0),dy=(keys.s||keys.ArrowDown?1:0)-(keys.w||keys.ArrowUp?1:0);
+ const dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);
  if(dx||dy){const m=Math.hypot(dx,dy);hero.x+=dx/m*st.speed*dt;hero.y+=dy/m*st.speed*dt;moveTo=null;targetId=null;interactQueued=null;}
  else if(targetId){const en=enemyById(targetId);if(en){const cfg=CLASSES[hero.cls];if(dist(hero,en)>cfg.range+en.radius-8){const d=dist(hero,en)||1;hero.x+=(en.x-hero.x)/d*st.speed*dt;hero.y+=(en.y-hero.y)/d*st.speed*dt;}}else targetId=null;}
  else if(moveTo){const distance=dist(hero,moveTo);if(distance>8){const step=Math.min(st.speed*dt,distance);hero.x+=(moveTo.x-hero.x)/distance*step;hero.y+=(moveTo.y-hero.y)/distance*step;}else{moveTo=null;}}
@@ -275,6 +275,12 @@ function update(dt){
  for(const en of [...enemies]){
   if(en.hp<=0)continue;en.flash=Math.max(0,en.flash-dt);en.attackCD-=dt;en.movePhase+=dt;
   const d=dist(en,hero);
+  // Hollowvale is a sanctuary: creatures disengage at the village boundary.
+  if(zone==='wild'&&Math.hypot(hero.x-425,hero.y-842)<295){
+   const home=Math.hypot(en.homeX-en.x,en.homeY-en.y);
+   if(home>8){en.x+=(en.homeX-en.x)/home*en.speed*dt;en.y+=(en.homeY-en.y)/home*en.speed*dt;}
+   continue;
+  }
   if(d<en.aggro&&d>MOB[en.type].reach+18){const s=en.speed*dt;en.x+=(hero.x-en.x)/d*s;en.y+=(hero.y-en.y)/d*s;}
   else if(d>en.aggro&&Math.hypot(en.x-en.homeX,en.y-en.homeY)>42){const home=Math.hypot(en.homeX-en.x,en.homeY-en.y)||1;en.x+=(en.homeX-en.x)/home*en.speed*.45*dt;en.y+=(en.homeY-en.y)/home*en.speed*.45*dt;}
   if(d<MOB[en.type].reach+20&&en.attackCD<=0){en.attackCD=en.type==='boss'||en.type==='cryptBoss'?1.55:1.15+rnd(-.1,.25);dmgHero(en.dmg);burst(hero.x,hero.y,'#e7a099',2,2);}
