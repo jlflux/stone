@@ -150,8 +150,8 @@ function dmgEnemy(en,amount,color='#f1dcac'){
 }
 function dmgHero(amount){
  if(now<dodgeUntil)return;
- const st=stats(),reduction=st.armor*.24+(now<buffUntil&&hero.cls==='vanguard'?9:0),d=Math.max(1,Math.round(amount-reduction));hero.hp=Math.max(0,hero.hp-d);floatText('-'+d,hero.x,hero.y-35,'#ff8d7f');burst(hero.x,hero.y,'#b65a55',3,2);
- if(hero.hp<=0){$('deathScreen').classList.remove('hidden');targetId=null;moveTo=null;tone(130,.06,.55);save();}
+ const st=stats(),reduction=st.armor*.24+(now<buffUntil&&hero.cls==='vanguard'?9:0),d=Math.max(1,Math.round(amount-reduction));hero.hp=Math.max(0,hero.hp-d);hero.hurtStart=now;hero.hurtUntil=now+.28;floatText('-'+d,hero.x,hero.y-35,'#ff8d7f');burst(hero.x,hero.y,'#b65a55',3,2);
+ if(hero.hp<=0){hero.deathStart=now;$('deathScreen').classList.remove('hidden');targetId=null;moveTo=null;tone(130,.06,.55);save();}
 }
 function killEnemy(en){
  en.hp=0;const idx=enemies.indexOf(en);if(idx>=0)enemies.splice(idx,1);en.sp.enemy=null;en.sp.respawnAt=now+((en.type==='boss'||en.type==='cryptBoss')?75:24+rnd(0,12));
@@ -193,7 +193,7 @@ function basicAttack(){
  if(!en){if(hero.settings.autoAttack)en=nearestEnemy(cfg.range+16);else return;}
  if(!en||dist(en,hero)>cfg.range+en.radius)return;
  attackTimer=(hero.cls==='vanguard'?.69:hero.cls==='wayfinder'?.6:.75)/st.haste;
- hero.swingUntil=now+.23;
+ hero.attackStart=now;hero.swingUntil=now+(hero.cls==='vanguard'?.50:hero.cls==='wayfinder'?.58:.50);
  const faceD=dist(hero,en)||1;hero.faceX=(en.x-hero.x)/faceD;hero.faceY=(en.y-hero.y)/faceD;
  let amount=st.attack*(now<buffUntil&&hero.cls==='vanguard'?1.34:1);
  dmgEnemy(en,amount,hero.cls==='arcanist'?'#b5cfff':'#e5dfc3');
@@ -206,7 +206,10 @@ function castSkill(key){
  if(key==='potion'){if(skillCd.potion>0||hero.potions<=0||hero.hp>=stats().hp)return;hero.potions--;hero.hp=Math.min(stats().hp,hero.hp+Math.round(stats().hp*.55));skillCd.potion=12;burst(hero.x,hero.y,'#ed7872',18,4);floatText('HEALED',hero.x,hero.y-40,'#b4ebbd');tone(650,.045,.15);save();return;}
  const idx={q:0,e:1,r:2}[key];if(idx===undefined||skillCd[key]>0)return;
  const [name,icon,cost,cd]=CLASSES[hero.cls].skills[idx];
- if(!manaCheck(cost))return;skillCd[key]=cd;const st=stats(),c=hero.cls,tx=mouse.worldX||hero.x+85,ty=mouse.worldY||hero.y,dir=Math.atan2(ty-hero.y,tx-hero.x);
+ if(!manaCheck(cost))return;hero.castStart=now;hero.castUntil=now+.48;
+ const facingX=(mouse.worldX||hero.x+50)-hero.x,facingY=(mouse.worldY||hero.y)-hero.y,angle=Math.hypot(facingX,facingY);
+ if(angle>10){hero.faceX=facingX/angle;hero.faceY=facingY/angle;}
+ skillCd[key]=cd;const st=stats(),c=hero.cls,tx=mouse.worldX||hero.x+85,ty=mouse.worldY||hero.y,dir=Math.atan2(ty-hero.y,tx-hero.x);
  if(key==='q'){
   const center=c==='arcanist'?{x:clamp(tx,hero.x-285,hero.x+285),y:clamp(ty,hero.y-285,hero.y+285)}:{x:hero.x,y:hero.y};
   const range=c==='vanguard'?123:c==='wayfinder'?335:115;
@@ -542,7 +545,12 @@ function renderJournal(){
  '<div class="panel-note">The world persists on this browser. Enemies respawn; character levels, quests, inventory and equipment save automatically.</div>';
 }
 function renderSettings(){
- return '<div class="section-label">PREFERENCES</div>'+
+ return '<div class="section-label">PIXEL ART · GRIDWRIGHT SAMPLE</div>'+
+ '<p class="panel-subtitle">The free sample adds 8-direction sprite animations for the Vanguard (Knight) and Wayfinder (Huntress). The Arcanist temporarily uses the Knight sprite. The ZIP remains on this device.</p>'+
+ '<div class="panel-note" id="spritePanelStatus">'+escapeHTML(window.StoneGridwright?.status()||'Pixel sprite importer unavailable')+'</div>'+
+ '<div class="item-actions"><button class="small-btn accent" data-action="importSprites">IMPORT / REPLACE ZIP</button>'+
+ '<button class="small-btn" data-action="removeSprites">USE ORIGINAL ART</button></div>'+
+ '<div class="separator"></div><div class="section-label">PREFERENCES</div>'+
  [['sound','Combat sound effects'],['damage','Floating damage numbers'],['autoAttack','Automatically attack nearby enemies'],['shake','Full combat particles']].map(a=>'<label class="settings-row"><span><strong>'+a[1]+'</strong><small>'+({sound:'Generated sounds; no external music',damage:'See each hit and critical strike',autoAttack:'Attacks creatures within weapon reach',shake:'Extra glow and combat particles'}[a[0]])+'</small></span><input type="checkbox" data-setting="'+a[0]+'" '+(hero.settings[a[0]]?'checked':'')+'></label>').join('')+
  '<div class="section-label" style="margin-top:24px">CONTROLS</div><div class="panel-note">LEFT CLICK: move / attack / interact<br>WASD: direct movement<br>RIGHT CLICK / Q: primary ability<br>E / R: class abilities<br>4: healing flask<br>SPACE: evade<br>F: nearby interaction<br>I / C / T / J: panels</div>'+
  '<button class="small-btn" data-action="save">SAVE NOW</button> <button class="small-btn" data-action="newGame">DELETE SAVE & RESTART</button>';
@@ -583,6 +591,24 @@ function wire(){
  window.addEventListener('beforeunload',save);
  $('classChoices').addEventListener('click',e=>{const b=e.target.closest('[data-class]');if(!b)return;selectedClass=b.dataset.class;document.querySelectorAll('[data-class]').forEach(el=>el.classList.toggle('selected',el===b));});
  $('creationColors').addEventListener('click',e=>{const b=e.target.closest('[data-color]');if(!b)return;selectedColor=b.dataset.color;document.querySelectorAll('[data-color]').forEach(el=>el.classList.toggle('selected',el===b));});
+ window.StoneGridwright?.init();
+ const updateSpriteStatus=()=>{const el=$('spriteStatus');if(el)el.textContent=window.StoneGridwright?.status()||'Pixel art pack unavailable';if(panel==='settings')refreshPanel();};
+ window.addEventListener('stone-sprites-status',updateSpriteStatus);
+ updateSpriteStatus();
+ $('spriteInstall').addEventListener('click',()=>$('spriteZip').click());
+ $('spriteZip').addEventListener('change',async event=>{
+  const file=event.target.files?.[0];if(!file)return;
+  $('spriteInstall').disabled=true;$('spriteInstall').textContent='IMPORTING PIXEL ART…';
+  try{
+   await window.StoneGridwright.install(file);
+   if(hero)toast('GRIDWRIGHT KNIGHT & HUNTRESS SPRITES ACTIVATED');
+   $('spriteInstall').textContent='✓ GRIDWRIGHT ART ACTIVE';
+  }catch(err){
+   $('spriteInstall').textContent='✦ RETRY GRIDWRIGHT IMPORT';
+   if(hero)toast('SPRITE IMPORT FAILED');
+   window.alert('Unable to load this pack: '+(err?.message||String(err)));
+  }finally{$('spriteInstall').disabled=false;$('spriteZip').value='';updateSpriteStatus();}
+ });
  $('startGame').addEventListener('click',()=>{let name=$('heroName').value.trim().slice(0,18)||'Wanderer';hero=baseSave(name,selectedClass,selectedColor);start();toast('WELCOME TO HOLLOWVALE');});
  $('heroName').addEventListener('keydown',e=>{if(e.key==='Enter')$('startGame').click();});
  document.querySelectorAll('.nav [data-panel]').forEach(b=>b.addEventListener('click',()=>setPanel(b.dataset.panel)));
@@ -596,6 +622,8 @@ function wire(){
   b=e.target.closest('[data-talent]');if(b&&hero.talentPoints>0&&hero.talents[b.dataset.talent]<5){hero.talents[b.dataset.talent]++;hero.talentPoints--;refreshPanel();save();tone(750,.03,.2);return;}
   b=e.target.closest('[data-tint]');if(b){hero.tint=b.dataset.tint;refreshPanel();save();return;}
   b=e.target.closest('[data-action]');if(!b)return;const action=b.dataset.action;
+  if(action==='importSprites'){$('spriteZip').click();return;}
+  if(action==='removeSprites'){window.StoneGridwright?.remove().then(()=>{refreshPanel();toast('PROCEDURAL ART ACTIVE')});return;}
   if(action==='equip'||action==='unequip')equipItem();
   if(action==='salvage')salvage();
   if(action==='respec'){if(hero.gold<200){toast('NEED 200 GOLD TO RESPEC');return;}hero.gold-=200;hero.attrPoints+=Object.values(hero.attr).reduce((a,v)=>a+v,0)-16;hero.attr={might:4,vitality:4,agility:4,spirit:4};hero.talentPoints+=Object.values(hero.talents).reduce((a,v)=>a+v,0);for(const t of Object.keys(hero.talents))hero.talents[t]=0;hero.hp=Math.min(hero.hp,stats().hp);refreshPanel();save();toast('ATTRIBUTES & TALENTS RESET');}
