@@ -30,6 +30,21 @@ Open `index.html` in a modern browser, or deploy this repository to Vercel as a 
 | I / C / T / J | Inventory / Character / Talents / Journal |
 | Esc | Close a panel or dialogue |
 
+## Import the Gridwright Free Sample (no purchase required)
+
+The project includes \`gridwright.js\`, a built-in importer for the original Gridwright Isometric Hero Creator Free Sample ZIP. This is an **optional one-time browser import**.
+
+1. Deploy or open STONE in a recent Chrome/Edge browser.
+2. Before creating a character, select **IMPORT GRIDWRIGHT PIXEL ART ZIP**, or select **Settings → IMPORT / REPLACE ZIP** once in the game.
+3. Choose the **original .zip file** supplied by Gridwright. Do **not** unzip it first.
+4. The importer validates the archive, loads all 8 directional views / 11 animations for the Knight and Huntress, and stores the ZIP in that browser's IndexedDB. Subsequent sessions automatically reload the artwork.
+
+While installed, the Vanguard uses Knight sprites; Wayfinder uses Huntress sprites; and Arcanist temporarily uses Knight casting sprites. The other enemies, buildings, terrain, and NPCs are still drawn using the prototype renderer. The free sample doesn't include a dedicated mage or monster set. The sample's character colors and equipment are predetermined; visible gear swaps are a later feature requiring layered sprite composition and the full asset pack.
+
+**Copyright and license:** Gridwright's \`LICENSE.txt\` permits incorporation into personal and commercial games, and modification for your game, but prohibits redistribution of the standalone asset files. For that reason, the uploaded ZIP and raw source sprites are **not committed to this public repository**. The browser uses local-only import and storage; its content does not leave the player's device. Credit (appreciated but not required): Art by Gridwright.
+
+The import system supports the ready-made 1× and 2× Knight and Huntress sprite sheets from the Free Sample and falls back to the existing Canvas art if the sprite pack has not been imported, can't be decoded, or is removed in Settings.
+
 ## Technical notes
 This is a **single-player vertical slice**, not yet an MMO. All data is stored locally in the current browser/device. True multiplayer will require user accounts, authoritative servers, shared world state and a backend/database. The engine is deliberately dependency-free for easy Vercel deployment and rapid iteration.
 
