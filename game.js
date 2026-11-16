@@ -592,7 +592,7 @@ function wire(){
  canvas.addEventListener('mousemove',e=>{const pos=screenPoint(e);mouse.worldX=pos.x;mouse.worldY=pos.y;mouse.x=e.clientX;mouse.y=e.clientY;if(mouse.down&&!targetId&&!interactQueued)selectWorldPoint(pos);});
  canvas.addEventListener('mouseleave',()=>mouse.down=false);
  window.addEventListener('keydown',e=>{
-  if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName))return;
+  if(!appStarted&&['INPUT','TEXTAREA'].includes(document.activeElement.tagName))return;
   const k=e.key.toLowerCase();keys[k]=true;
   if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
   if(k==='escape'){if(panel)setPanel(null);else $('dialogue').classList.add('hidden');return;}
