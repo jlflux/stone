@@ -302,7 +302,7 @@ function update(dt){
   }
   if(d<en.aggro&&d>MOB[en.type].reach+18){const s=en.speed*dt;en.x+=(hero.x-en.x)/d*s;en.y+=(hero.y-en.y)/d*s;}
   else if(d>en.aggro&&Math.hypot(en.x-en.homeX,en.y-en.homeY)>42){const home=Math.hypot(en.homeX-en.x,en.homeY-en.y)||1;en.x+=(en.homeX-en.x)/home*en.speed*.45*dt;en.y+=(en.homeY-en.y)/home*en.speed*.45*dt;}
-  if(d<MOB[en.type].reach+20&&en.attackCD<=0){en.attackCD=en.type==='boss'||en.type==='cryptBoss'?1.55:1.15+rnd(-.1,.25);dmgHero(en.dmg);burst(hero.x,hero.y,'#e7a099',2,2);}
+  if(d<MOB[en.type].reach+20&&en.attackCD<=0){en.swingUntil=now+.28;en.attackCD=en.type==='boss'||en.type==='cryptBoss'?1.55:1.15+rnd(-.1,.25);dmgHero(en.dmg);burst(hero.x,hero.y,'#e7a099',2,2);}
  }
  for(let i=effects.length-1;i>=0;i--){
   const e=effects[i];e.life-=dt;
@@ -563,10 +563,19 @@ function screenPoint(event){const rect=canvas.getBoundingClientRect();return Sto
 function selectWorldPoint(pos){
  if(!hero||hero.hp<=0||panel||!$('dialogue').classList.contains('hidden'))return;
  mouse.worldX=pos.x;mouse.worldY=pos.y;
- let pick=null,near=45;for(const en of enemies){const d=dist(pos,en);if(d<near+en.radius*.3){pick=en;near=d;}}
+ const click=StoneVisual.project(pos.x,pos.y);
+ let pick=null,best=Infinity;
+ for(const en of enemies){
+  const p=StoneVisual.project(en.x,en.y),dx=Math.abs(click.x-p.x),dy=click.y-p.y;
+  const h=(en.type==='boss'||en.type==='cryptBoss')?155:en.type==='brute'?120:100;
+  const inside=dx<(en.radius*1.25+15)&&dy<18&&dy>-h;
+  if(inside){const weight=dx+Math.abs(dy+h*.38)*.35;if(weight<best){pick=en;best=weight;}}
+ }
  if(pick){targetId=pick.id;moveTo=null;interactQueued=null;return;}
- if(zone==='wild'){for(const npc of NPCS){if(dist(pos,npc)<47){targetId=null;interactQueued={type:'npc',id:npc.id,pos:npc};moveTo={x:npc.x,y:npc.y+45};if(dist(hero,npc)<95){const id=npc.id;interactQueued=null;talk(id);}return;}}}
- const portal=PORTALS[zone];if(dist(pos,portal)<75){targetId=null;interactQueued={type:'portal',pos:portal};moveTo={x:portal.x,y:portal.y+48};if(dist(hero,portal)<95){interactQueued=null;interactPortal();}return;}
+ if(zone==='wild'){for(const npc of NPCS){const p=StoneVisual.project(npc.x,npc.y);
+ if(Math.abs(click.x-p.x)<32&&click.y-p.y<17&&click.y-p.y>-148){targetId=null;interactQueued={type:'npc',id:npc.id,pos:npc};moveTo={x:npc.x,y:npc.y+45};if(dist(hero,npc)<95){const id=npc.id;interactQueued=null;talk(id);}return;}}}
+ const portal=PORTALS[zone],portalP=StoneVisual.project(portal.x,portal.y);
+ if(Math.abs(click.x-portalP.x)<55&&click.y-portalP.y<25&&click.y-portalP.y>-145){targetId=null;interactQueued={type:'portal',pos:portal};moveTo={x:portal.x,y:portal.y+48};if(dist(hero,portal)<95){interactQueued=null;interactPortal();}return;}
  targetId=null;interactQueued=null;moveTo={x:clamp(pos.x,20,MAPS[zone].w-20),y:clamp(pos.y,20,MAPS[zone].h-20)};
 }
 function wire(){
