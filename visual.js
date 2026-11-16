@@ -63,7 +63,6 @@ function drawGround(W){
  C.fillStyle=zone==='crypt'?'#121e28':'#1d322b';C.fillRect(0,0,V.w,V.h);
  for(let i=minx;i<=maxx;i++)for(let j=miny;j<=maxy;j++){
   const x=i*TILE,y=j*TILE;
-  if(x<0||y<0||x>W.w||y>W.h)continue;
   tile(x,y,hash(i+125,j+175),i,j,zone);
  }
  drawWorldDetails();
@@ -280,7 +279,7 @@ function enemyDraw(E){
   line([[-11,-9],[-14+t,7]],'#61564e',8);line([[9,-8],[8-t,7]],'#514b46',8);
   line([[-24,-17],[-38,-32]],'#685e53',6);C.restore();
  }else if(E.type==='skeleton'||E.type==='guardian'){
-  humanoid(p,'#c7c4ad',E.type==='guardian'?'#67727e':'#5f695f','spear',{walk,scale:scale*.92,
+  humanoid(p,'#c7c4ad',E.type==='guardian'?'#67727e':'#5f695f','spear',{walk,attack:tm<(E.swingUntil||0)?1:0,scale:scale*.92,
    facing:face,armor:E.type==='guardian'?'#a5acb8':'#8c968e',helmet:E.type==='guardian',helm:'#b8b5a4'});
   const head=coord(E.x,E.y);ell(head.x-4,head.y-55,2,3,'#18272c');ell(head.x+5,head.y-55,2,3,'#18272c');
  }else if(E.type==='cultist'||E.type==='wraith'){
@@ -289,7 +288,7 @@ function enemyDraw(E){
    facing:face,hood:E.type==='wraith'?'#476979':'#4d395f',armor:'#4e5265'});
   if(E.type==='wraith'){ell(p.x,p.y-22,28,38,'#7ea6c015');}
  }else{
-  humanoid(p,'#a58d85',E.type==='cryptBoss'?'#74568f':'#79604a','sword',{walk,scale:1.48,
+  humanoid(p,'#a58d85',E.type==='cryptBoss'?'#74568f':'#79604a','sword',{walk,attack:tm<(E.swingUntil||0)?Math.sin((E.swingUntil-tm)/.28*PI):0,scale:1.48,
     facing:face,hood:E.type==='cryptBoss'?'#695183':'#70604d',armor:E.type==='cryptBoss'?'#87729b':'#b2936c',
     shoulder:'#b9a080',gold:boss});
   const a=Math.sin(tm*3)*3;
