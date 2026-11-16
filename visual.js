@@ -250,7 +250,7 @@ function heroDraw(H){
  const walk=moving?tm*11.5:0;
  const attack=tm<(H.swingUntil||0)?Math.sin((H.swingUntil-tm)/.23*PI):0;
  if(V.now<V.buffUntil){C.strokeStyle='#f7c7809c';C.lineWidth=3;C.beginPath();C.ellipse(p.x,p.y,29,14,0,0,PI*2);C.stroke();}
- humanoid(p,'#d7ae8a',H.tint,H.cls==='vanguard'?'sword':H.cls==='wayfinder'?'bow':'staff',{
+ if(!window.StoneGridwright?.draw(C,p.x,p.y,H,V)) humanoid(p,'#d7ae8a',H.tint,H.cls==='vanguard'?'sword':H.cls==='wayfinder'?'bow':'staff',{
   facing:face,walk,attack,armor:rare?'#acb1a5':'#727f75',
   shoulder:rare?'#bdad92':'#8d9e91',helm:gear.helm?'#a8a99a':'#4e453d',
   helmet:!!gear.helm,hood:H.cls==='arcanist'?'#343851':null,gold:gear.weapon&&gear.weapon.rarity==='legendary'
