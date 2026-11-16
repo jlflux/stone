@@ -63,6 +63,8 @@ function drawGround(W){
  C.fillStyle=zone==='crypt'?'#121e28':'#1d322b';C.fillRect(0,0,V.w,V.h);
  for(let i=minx;i<=maxx;i++)for(let j=miny;j<=maxy;j++){
   const x=i*TILE,y=j*TILE;
+  const center=coord(x+TILE*.5,y+TILE*.5);
+  if(!visible(center.x,center.y,V.w,V.h,TILE*1.4))continue;
   tile(x,y,hash(i+125,j+175),i,j,zone);
  }
  drawWorldDetails();
