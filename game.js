@@ -123,7 +123,7 @@ function loadZone(next,initial=false){
  zone=next;hero.zone=next;enemies=[];drops=[];effects=[];particles=[];floats=[];targetId=null;moveTo=null;interactQueued=null;
  for(const sp of spawns[next])sp.enemy=null;
  if(!initial){if(next==='crypt'){hero.x=230;hero.y=1009;}else{hero.x=1970;hero.y=380;}hero.hp=Math.max(1,hero.hp);save();}
- camera.x=clamp(hero.x-view.w*.5,0,MAPS[zone].w-view.w);camera.y=clamp(hero.y-view.h*.5,0,MAPS[zone].h-view.h);
+ const projected=StoneVisual.project(hero.x,hero.y);camera.x=projected.x-view.w*.5;camera.y=projected.y-view.h*.5;
  $('areaName').textContent=MAPS[zone].label.toUpperCase();$('zoneCaption').innerHTML='<span>THE ASHEN REACH</span><strong>'+MAPS[zone].label+'</strong><small>'+MAPS[zone].subtitle+'</small>';$('zoneCaption').style.opacity='1';zoneTitleUntil=now+3.7;
  log('Entered '+MAPS[zone].label,'quest');refreshQuest();refreshPanel();
 }
@@ -192,6 +192,8 @@ function basicAttack(){
  if(!en){if(hero.settings.autoAttack)en=nearestEnemy(cfg.range+16);else return;}
  if(!en||dist(en,hero)>cfg.range+en.radius)return;
  attackTimer=(hero.cls==='vanguard'?.69:hero.cls==='wayfinder'?.6:.75)/st.haste;
+ hero.swingUntil=now+.23;
+ const faceD=dist(hero,en)||1;hero.faceX=(en.x-hero.x)/faceD;hero.faceY=(en.y-hero.y)/faceD;
  let amount=st.attack*(now<buffUntil&&hero.cls==='vanguard'?1.34:1);
  dmgEnemy(en,amount,hero.cls==='arcanist'?'#b5cfff':'#e5dfc3');
  effects.push({type:hero.cls==='vanguard'?'slash':'bolt',x:hero.x,y:hero.y-8,tx:en.x,ty:en.y-10,life:.2,max:.2,color:hero.cls==='arcanist'?'#a4bef7':hero.cls==='wayfinder'?'#e9d6a0':'#f5e7c5'});
@@ -223,7 +225,7 @@ function castSkill(key){
  }
  refreshHUD();save();
 }
-function dodge(){if(!hero||hero.hp<=0||now<dodgeUntil||panel)return;const dx=(keys.d?1:0)-(keys.a?1:0),dy=(keys.s?1:0)-(keys.w?1:0);let a=(dx||dy)?Math.atan2(dy,dx):Math.atan2(mouse.worldY-hero.y,mouse.worldX-hero.x);burst(hero.x,hero.y,hero.tint,8,3);hero.x=clamp(hero.x+Math.cos(a)*100,28,MAPS[zone].w-28);hero.y=clamp(hero.y+Math.sin(a)*100,28,MAPS[zone].h-28);dodgeUntil=now+.7;moveTo=null;targetId=null;tone(200,.013,.08);}
+function dodge(){if(!hero||hero.hp<=0||now<dodgeUntil||panel)return;const ix=(keys.d?1:0)-(keys.a?1:0),iy=(keys.s?1:0)-(keys.w?1:0),dx=ix/.88+iy/.46,dy=iy/.46-ix/.88;let a=(dx||dy)?Math.atan2(dy,dx):Math.atan2(mouse.worldY-hero.y,mouse.worldX-hero.x);burst(hero.x,hero.y,hero.tint,8,3);hero.x=clamp(hero.x+Math.cos(a)*100,28,MAPS[zone].w-28);hero.y=clamp(hero.y+Math.sin(a)*100,28,MAPS[zone].h-28);dodgeUntil=now+.7;moveTo=null;targetId=null;tone(200,.013,.08);}
 function talk(npcId){
  if(zone!=='wild')return;
  panel&&setPanel(null);const q=hero.quest;let line='',actions=[];
@@ -265,11 +267,16 @@ function update(dt){
  for(const k of Object.keys(skillCd))skillCd[k]=Math.max(0,skillCd[k]-dt);
  if(zoneTitleUntil<now)$('zoneCaption').style.opacity='0';
  const st=stats();hero.hp=clamp(hero.hp+dt*(hero.hp<st.hp?0.6:0),0,st.hp);hero.mana=clamp(hero.mana+dt*(4.7+hero.attr.spirit*.35)*(1+hero.talents.arcana*.15),0,st.mana);
- const dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);
+ const previousX=hero.x,previousY=hero.y;
+ const inputX=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),inputY=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);
+ // Keys are screen-relative; invert the world projection to steer intuitively.
+ const dx=inputX/.88+inputY/.46,dy=inputY/.46-inputX/.88;
  if(dx||dy){const m=Math.hypot(dx,dy);hero.x+=dx/m*st.speed*dt;hero.y+=dy/m*st.speed*dt;moveTo=null;targetId=null;interactQueued=null;}
  else if(targetId){const en=enemyById(targetId);if(en){const cfg=CLASSES[hero.cls];if(dist(hero,en)>cfg.range+en.radius-8){const d=dist(hero,en)||1;hero.x+=(en.x-hero.x)/d*st.speed*dt;hero.y+=(en.y-hero.y)/d*st.speed*dt;}}else targetId=null;}
  else if(moveTo){const distance=dist(hero,moveTo);if(distance>8){const step=Math.min(st.speed*dt,distance);hero.x+=(moveTo.x-hero.x)/distance*step;hero.y+=(moveTo.y-hero.y)/distance*step;}else{moveTo=null;}}
  hero.x=clamp(hero.x,24,MAPS[zone].w-24);hero.y=clamp(hero.y,24,MAPS[zone].h-24);
+ const movement=Math.hypot(hero.x-previousX,hero.y-previousY);hero.moving=movement>dt*18;
+ if(hero.moving){hero.faceX=(hero.x-previousX)/movement;hero.faceY=(hero.y-previousY)/movement;}
  if(interactQueued&&dist(hero,interactQueued.pos)<95){const obj=interactQueued;interactQueued=null;moveTo=null;if(obj.type==='npc')talk(obj.id);else interactPortal();}
  updateSpawns();basicAttack();
  for(const en of [...enemies]){
@@ -294,7 +301,7 @@ function update(dt){
  for(let i=particles.length-1;i>=0;i--){const q=particles[i];q.life-=dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=q.grav*dt;q.vx*=.98;if(q.life<=0)particles.splice(i,1);}
  for(let i=floats.length-1;i>=0;i--){floats[i].life-=dt;floats[i].y+=floats[i].vy*dt;if(floats[i].life<=0)floats.splice(i,1);}
  pickup();
- const mx=clamp(hero.x-view.w*.5,0,Math.max(0,MAPS[zone].w-view.w)),my=clamp(hero.y-view.h*.5,0,Math.max(0,MAPS[zone].h-view.h));
+ const projected=StoneVisual.project(hero.x,hero.y),mx=projected.x-view.w*.5,my=projected.y-view.h*.5;
  camera.x+=(mx-camera.x)*Math.min(1,dt*8);camera.y+=(my-camera.y)*Math.min(1,dt*8);
  if(saveTimer>16){saveTimer=0;save();}
  if(uiTimer>.1){uiTimer=0;refreshHUD();}
@@ -306,28 +313,14 @@ function loop(t){
  if(!appStarted)return;
  const dt=Math.min(.045,(t-(last||t))/1000);last=t;
  const paused=panel!==null||!$('dialogue').classList.contains('hidden')||!$('deathScreen').classList.contains('hidden');
- if(!paused)update(dt);else{camera.x+=(clamp(hero.x-view.w*.5,0,Math.max(0,MAPS[zone].w-view.w))-camera.x)*Math.min(1,dt*7);camera.y+=(clamp(hero.y-view.h*.5,0,Math.max(0,MAPS[zone].h-view.h))-camera.y)*Math.min(1,dt*7);}
+ if(!paused)update(dt);else{const p=StoneVisual.project(hero.x,hero.y);camera.x+=(p.x-view.w*.5-camera.x)*Math.min(1,dt*7);camera.y+=(p.y-view.h*.5-camera.y)*Math.min(1,dt*7);}
  draw();requestAnimationFrame(loop);
 }
 function patchNoise(a,b){let k=Math.sin(a*127.1+b*311.7)*43758.5453123;return k-Math.floor(k);}
 function draw(){
  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,view.w,view.h);
- ctx.save();ctx.translate(-camera.x,-camera.y);
- if(zone==='wild')drawWild();else drawCrypt();
- const actors=[];
- for(const p of decors[zone])if(visible(p,110))actors.push({kind:'decor',ref:p,y:p.y});
- if(zone==='wild')for(const n of NPCS)if(visible(n,100))actors.push({kind:'npc',ref:n,y:n.y});
- for(const en of enemies)if(visible(en,110))actors.push({kind:'enemy',ref:en,y:en.y});
- for(const drop of drops)if(visible(drop,80))actors.push({kind:'drop',ref:drop,y:drop.y});
- actors.push({kind:'hero',ref:hero,y:hero.y});
- actors.sort((a,b)=>a.y-b.y);
- for(const a of actors){if(a.kind==='decor')drawDecor(a.ref);else if(a.kind==='npc')drawNPC(a.ref);else if(a.kind==='enemy')drawEnemy(a.ref);else if(a.kind==='drop')drawDrop(a.ref);else drawHero();}
- drawPortal(PORTALS[zone]);
- for(const e of effects)drawEffect(e);
- for(const q of particles){ctx.globalAlpha=clamp(q.life/q.max,0,1);ctx.fillStyle=q.color;ctx.fillRect(q.x,q.y,q.size,q.size);ctx.globalAlpha=1;}
- for(const f of floats){ctx.globalAlpha=clamp(f.life/.6,0,1);ctx.fillStyle=f.color;ctx.font='bold 13px "DM Sans",sans-serif';ctx.textAlign='center';ctx.shadowColor='#000';ctx.shadowBlur=5;ctx.fillText(f.text,f.x,f.y);ctx.shadowBlur=0;ctx.globalAlpha=1;}
- if(moveTo){ctx.strokeStyle='#c9b67c77';ctx.lineWidth=1.3;ctx.beginPath();ctx.arc(moveTo.x,moveTo.y,11+Math.sin(now*7)*2,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(moveTo.x-7,moveTo.y);ctx.lineTo(moveTo.x+7,moveTo.y);ctx.moveTo(moveTo.x,moveTo.y-7);ctx.lineTo(moveTo.x,moveTo.y+7);ctx.stroke();}
- ctx.restore();drawBossBar();
+ StoneVisual.render({ctx,zone,camera,view,hero,enemies,drops,decors:decors[zone],effects,particles,floats,npcs:NPCS,portal:PORTALS[zone],maps:MAPS,now,targetId,moveTo,stats:stats(),buffUntil,dodgeUntil});
+ drawBossBar();
 }
 function visible(p,pad){return p.x>camera.x-pad&&p.x<camera.x+view.w+pad&&p.y>camera.y-pad&&p.y<camera.y+view.h+pad;}
 function ellipse(x,y,rx,ry,c){ctx.fillStyle=c;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();}
@@ -551,7 +544,7 @@ function equipItem(){
  const s=stats();hero.hp=Math.min(hero.hp,s.hp);hero.mana=Math.min(hero.mana,s.mana);tone(560,.03,.15);refreshPanel();refreshHUD();save();
 }
 function salvage(){const item=hero.inventory[selectedItem];if(!item)return;const gold=Math.round(item.value*.45);hero.gold+=gold;hero.inventory.splice(selectedItem,1);selectedItem=clamp(selectedItem,0,Math.max(0,hero.inventory.length-1));log('Salvaged '+item.name+' for '+gold+' gold','loot');refreshPanel();refreshHUD();save();}
-function screenPoint(event){const rect=canvas.getBoundingClientRect();return {x:(event.clientX-rect.left)+camera.x,y:(event.clientY-rect.top)+camera.y};}
+function screenPoint(event){const rect=canvas.getBoundingClientRect();return StoneVisual.unproject((event.clientX-rect.left)+camera.x,(event.clientY-rect.top)+camera.y);}
 function selectWorldPoint(pos){
  if(!hero||hero.hp<=0||panel||!$('dialogue').classList.contains('hidden'))return;
  mouse.worldX=pos.x;mouse.worldY=pos.y;
