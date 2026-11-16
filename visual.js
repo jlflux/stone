@@ -368,7 +368,7 @@ function visualFX(){
   line([[p.x-7,p.y],[p.x+7,p.y]],'#dec58b82');}
 }
 function render(state){
- V=state;C=state.ctx;cam=state.camera;zone=state.zone;tm=state.now;
+ V={...state,w:state.view.w,h:state.view.h};C=state.ctx;cam=state.camera;zone=state.zone;tm=state.now;
  const W=state.maps[zone];
  drawGround(W);
  // Flattened architecture before characters (cabins & high towers draw behind their occupants).
