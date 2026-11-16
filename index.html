@@ -36,6 +36,11 @@
       <div class="field-label space-label">CLOAK COLOR <span>03 / 03</span></div>
       <div class="color-choices" id="creationColors"><button aria-label="Forest" data-color="#5fae98" class="color selected" style="--swatch:#5fae98"></button><button aria-label="Ember" data-color="#cd7766" class="color" style="--swatch:#cd7766"></button><button aria-label="Royal" data-color="#889bd8" class="color" style="--swatch:#889bd8"></button><button aria-label="Violet" data-color="#b08bd6" class="color" style="--swatch:#b08bd6"></button><button aria-label="Gold" data-color="#d6b574" class="color" style="--swatch:#d6b574"></button></div>
       <button id="startGame" class="primary-btn">ENTER THE ASHEN REACH <span>↗</span></button>
+      <div class="sprite-install-cta">
+        <button id="spriteInstall" class="sprite-import-button" type="button">✦ IMPORT GRIDWRIGHT PIXEL ART ZIP</button>
+        <span id="spriteStatus">Procedural preview artwork · optional pixel sprite upgrade</span>
+      </div>
+      <input type="file" accept=".zip,application/zip" id="spriteZip" hidden>
       <div class="creation-foot">Single-player adventure · Saves automatically on this device</div>
     </div>
   </div>
@@ -108,7 +113,8 @@
     </main>
     <footer class="game-footer"><span>STONE // ASHFALL</span><span id="saveStatus">● PROGRESS SAVED LOCALLY</span><span>CHAPTER I · THE AWAKENING</span></footer>
   </div>
-  <script src="./visual.js?v=20261116-viewport-fix" defer></script>
-  <script src="./game.js" defer></script>
+  <script src="./gridwright.js" defer></script>
+  <script src="./visual.js?v=20261116-gridwright-preview" defer></script>
+  <script src="./game.js?v=20261116-gridwright-preview" defer></script>
 </body>
 </html>
