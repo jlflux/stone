@@ -122,6 +122,7 @@ function createSpawns(){
 function loadZone(next,initial=false){
  zone=next;hero.zone=next;enemies=[];drops=[];effects=[];particles=[];floats=[];targetId=null;moveTo=null;interactQueued=null;
  for(const sp of spawns[next])sp.enemy=null;
+ hero.moving=false;hero.swingUntil=0;
  if(!initial){if(next==='crypt'){hero.x=230;hero.y=1009;}else{hero.x=1970;hero.y=380;}hero.hp=Math.max(1,hero.hp);save();}
  const projected=StoneVisual.project(hero.x,hero.y);camera.x=projected.x-view.w*.5;camera.y=projected.y-view.h*.5;
  $('areaName').textContent=MAPS[zone].label.toUpperCase();$('zoneCaption').innerHTML='<span>THE ASHEN REACH</span><strong>'+MAPS[zone].label+'</strong><small>'+MAPS[zone].subtitle+'</small>';$('zoneCaption').style.opacity='1';zoneTitleUntil=now+3.7;
@@ -275,6 +276,17 @@ function update(dt){
  else if(targetId){const en=enemyById(targetId);if(en){const cfg=CLASSES[hero.cls];if(dist(hero,en)>cfg.range+en.radius-8){const d=dist(hero,en)||1;hero.x+=(en.x-hero.x)/d*st.speed*dt;hero.y+=(en.y-hero.y)/d*st.speed*dt;}}else targetId=null;}
  else if(moveTo){const distance=dist(hero,moveTo);if(distance>8){const step=Math.min(st.speed*dt,distance);hero.x+=(moveTo.x-hero.x)/distance*step;hero.y+=(moveTo.y-hero.y)/distance*step;}else{moveTo=null;}}
  hero.x=clamp(hero.x,24,MAPS[zone].w-24);hero.y=clamp(hero.y,24,MAPS[zone].h-24);
+ // Buildings are physical structures, not decorations you can walk through.
+ if(zone==='wild'){
+  for(const b of [{x:220,y:635,w:180,h:135},{x:575,y:1000,w:190,h:160},{x:571,y:687,w:185,h:145}]){
+   const hw=b.w/2+14,hh=b.h/2+14;
+   if(Math.abs(hero.x-b.x)<hw&&Math.abs(hero.y-b.y)<hh){
+    const horizontal=hw-Math.abs(hero.x-b.x),vertical=hh-Math.abs(hero.y-b.y);
+    if(horizontal<vertical)hero.x=b.x+(hero.x>=b.x?hw:-hw);
+    else hero.y=b.y+(hero.y>=b.y?hh:-hh);
+   }
+  }
+ }
  const movement=Math.hypot(hero.x-previousX,hero.y-previousY);hero.moving=movement>dt*18;
  if(hero.moving){hero.faceX=(hero.x-previousX)/movement;hero.faceY=(hero.y-previousY)/movement;}
  if(interactQueued&&dist(hero,interactQueued.pos)<95){const obj=interactQueued;interactQueued=null;moveTo=null;if(obj.type==='npc')talk(obj.id);else interactPortal();}
@@ -464,7 +476,10 @@ function drawMinimap(){
  if(zone==='wild'){for(const n of NPCS){mctx.fillStyle='#e6cf8e';mctx.fillRect(n.x*sx-2,n.y*sy-2,4,4);}}
  const q=hero.quest;let objective=null;if(zone==='wild'&&(q.stage===0||q.stage===4||q.stage===7))objective=NPCS[0];else if(zone==='wild'&&q.stage===3)objective={x:2260,y:895};else if(zone==='crypt'&&q.stage===6)objective={x:1545,y:635};else if(q.stage>=5&&q.stage<=6&&zone==='wild')objective=PORTALS.wild;
  if(objective){mctx.strokeStyle='#eac17c';mctx.lineWidth=2;mctx.beginPath();mctx.arc(objective.x*sx,objective.y*sy,6,0,Math.PI*2);mctx.stroke();}
- mctx.strokeStyle='#b7e4ce';mctx.lineWidth=1;mctx.strokeRect(camera.x*sx,camera.y*sy,view.w*sx,view.h*sy);
+ mctx.strokeStyle='#b7e4ce';mctx.lineWidth=1;
+ const cornerPts=[[camera.x,camera.y],[camera.x+view.w,camera.y],[camera.x+view.w,camera.y+view.h],[camera.x,camera.y+view.h]].map(c=>StoneVisual.unproject(c[0],c[1]));
+ mctx.beginPath();mctx.moveTo(cornerPts[0].x*sx,cornerPts[0].y*sy);
+ for(let i=1;i<cornerPts.length;i++)mctx.lineTo(cornerPts[i].x*sx,cornerPts[i].y*sy);mctx.closePath();mctx.stroke();
  mctx.fillStyle='#e6f6d8';mctx.beginPath();mctx.arc(hero.x*sx,hero.y*sy,3.6,0,Math.PI*2);mctx.fill();
  $('mapCoords').textContent=Math.round(hero.x)+' / '+Math.round(hero.y);
 }
