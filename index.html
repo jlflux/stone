@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1115">
+  <meta name="description" content="STONE: Ashfall — a loot-driven top-down dark fantasy action RPG.">
+  <title>STONE — Ashfall</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div id="splash" class="splash">
+    <div class="splash-art">
+      <div class="brand-mark">S<span>◈</span>ONE</div>
+      <div class="art-circles"><i></i><i></i><i></i></div>
+      <div class="splash-copy">
+        <div class="eyebrow"><span class="dot"></span> THE ASHEN REACH AWAITS</div>
+        <h1>EVERY LEGEND<br>BEGINS IN <em>ASH.</em></h1>
+        <p>Hunt through cursed wilds. Unearth impossible relics. Forge a hero worth remembering.</p>
+        <div class="intro-badges"><span>OPEN WORLD</span><span>LOOT & BUILDS</span><span>STORY & DUNGEONS</span></div>
+      </div>
+      <div class="splash-bottom">STONE / CHAPTER ONE <span>AN ORIGINAL ACTION RPG</span></div>
+    </div>
+    <div class="creation">
+      <div class="creation-top"><span class="eyebrow">NEW ADVENTURER</span><span class="step">01 / 03</span></div>
+      <h2>Become who<br>you were <em>meant</em> to be.</h2>
+      <p class="muted">Your class shapes how you fight. Your decisions shape everything else.</p>
+      <label class="field-label" for="heroName">CHARACTER NAME</label>
+      <input id="heroName" maxlength="18" placeholder="Enter your name" value="The Wanderer" autocomplete="off" spellcheck="false">
+      <div class="field-label space-label">CHOOSE YOUR PATH <span>02 / 03</span></div>
+      <div id="classChoices" class="class-choices">
+        <button class="class-choice selected" data-class="vanguard"><span class="class-glyph">⚔</span><span><strong>Vanguard</strong><small>Steel, resilience, close combat</small></span><b>01</b></button>
+        <button class="class-choice" data-class="wayfinder"><span class="class-glyph">➶</span><span><strong>Wayfinder</strong><small>Precision, mobility, ranged attacks</small></span><b>02</b></button>
+        <button class="class-choice" data-class="arcanist"><span class="class-glyph">✦</span><span><strong>Arcanist</strong><small>Runic power, spells, destruction</small></span><b>03</b></button>
+      </div>
+      <div class="field-label space-label">CLOAK COLOR <span>03 / 03</span></div>
+      <div class="color-choices" id="creationColors"><button aria-label="Forest" data-color="#5fae98" class="color selected" style="--swatch:#5fae98"></button><button aria-label="Ember" data-color="#cd7766" class="color" style="--swatch:#cd7766"></button><button aria-label="Royal" data-color="#889bd8" class="color" style="--swatch:#889bd8"></button><button aria-label="Violet" data-color="#b08bd6" class="color" style="--swatch:#b08bd6"></button><button aria-label="Gold" data-color="#d6b574" class="color" style="--swatch:#d6b574"></button></div>
+      <button id="startGame" class="primary-btn">ENTER THE ASHEN REACH <span>↗</span></button>
+      <div class="creation-foot">Single-player adventure · Saves automatically on this device</div>
+    </div>
+  </div>
+
+  <div id="game" class="game hidden">
+    <header class="topbar">
+      <div class="top-brand"><span class="gem">◆</span> STONE <small>ASHFALL</small></div>
+      <div class="top-status"><span class="online-dot"></span> THE ASHEN REACH <span class="status-sep">/</span> <strong id="areaName">HOLLOWVALE</strong></div>
+      <nav class="nav">
+        <button data-panel="inventory" title="Inventory (I)">▦ <span>Inventory</span> <kbd>I</kbd></button>
+        <button data-panel="character" title="Character (C)">♜ <span>Character</span> <kbd>C</kbd></button>
+        <button data-panel="talents" title="Talents (T)">✧ <span>Talents</span> <kbd>T</kbd></button>
+        <button data-panel="journal" title="Journal (J)">☷ <span>Journal</span> <kbd>J</kbd></button>
+        <button data-panel="settings" title="Settings">⚙</button>
+      </nav>
+      <div class="gold-pill"><span>◆</span> <b id="goldCount">0</b> <small>GOLD</small></div>
+    </header>
+
+    <main class="playframe" id="playframe">
+      <canvas id="scene" aria-label="Top-down RPG battlefield"></canvas>
+      <div id="vignette"></div>
+      <div class="zone-caption" id="zoneCaption"><span>THE ASHEN REACH</span><strong>Hollowvale</strong><small>THE LAST LIGHT BEFORE THE WILDS</small></div>
+
+      <div class="hero-hud ui-pass">
+        <div class="hero-portrait" id="heroPortrait">⚔</div>
+        <div class="hud-info">
+          <div class="hud-head"><strong id="hudName">The Wanderer</strong><span id="hudClass">VANGUARD · LV 1</span></div>
+          <div class="bar hp"><div id="hpFill"></div><span id="hpText">100 / 100</span></div>
+          <div class="bar mana"><div id="manaFill"></div><span id="manaText">80 / 80</span></div>
+          <div class="xp-track"><div id="xpFill"></div></div>
+        </div>
+        <span class="hud-lvl" id="hudLevel">01</span>
+      </div>
+
+      <div class="right-hud ui-pass">
+        <div class="minimap-card">
+          <div class="minimap-head"><span>✦ WORLD MAP</span><small id="mapCoords">00 / 00</small></div>
+          <canvas id="minimap" width="244" height="150"></canvas>
+          <div class="map-legend"><span><i class="legend-you"></i> YOU</span><span><i class="legend-objective"></i> OBJECTIVE</span><span><i class="legend-portal"></i> PORTAL</span></div>
+        </div>
+        <div class="quest-card" id="questTracker"></div>
+      </div>
+
+      <div class="game-hint ui-pass" id="gameHint"><span class="hint-key">LMB</span> Move / Attack <span class="hint-key">WASD</span> Move <span class="hint-key">F</span> Interact</div>
+      <div class="event-feed ui-pass" id="eventFeed"></div>
+
+      <div class="hotbar ui-pass" id="hotbar">
+        <button class="skill primary-skill" data-skill="basic" title="Basic attack"><small>LMB</small><b id="basicIcon">⚔</b><span>Attack</span></button>
+        <div class="hotbar-div"></div>
+        <button class="skill" data-skill="q"><small>Q</small><b id="qIcon">◈</b><span id="qName">Cleave</span><i class="cooldown" id="qCool"></i></button>
+        <button class="skill" data-skill="e"><small>E</small><b id="eIcon">➤</b><span id="eName">Rush</span><i class="cooldown" id="eCool"></i></button>
+        <button class="skill" data-skill="r"><small>R</small><b id="rIcon">✹</b><span id="rName">Rally</span><i class="cooldown" id="rCool"></i></button>
+        <div class="hotbar-div"></div>
+        <button class="skill flask-skill" data-skill="potion"><small>4</small><b>♥</b><span>Flask <span id="potionCount">5</span></span><i class="cooldown" id="potionCool"></i></button>
+        <div class="bottom-help"><strong>SPACE</strong> EVADE</div>
+      </div>
+
+      <div class="sidepanel ui-pass hidden" id="sidepanel">
+        <div class="panel-head"><div><small id="panelEyebrow">ADVENTURER</small><h3 id="panelTitle">Inventory</h3></div><button id="closePanel" title="Close (Esc)">✕</button></div>
+        <div id="panelBody" class="panel-body"></div>
+      </div>
+
+      <div class="dialogue ui-pass hidden" id="dialogue">
+        <div class="dialogue-icon" id="dialogueIcon">✦</div>
+        <div class="dialogue-text"><small id="dialogueRole">NPC</small><h3 id="dialogueName">Warden Kael</h3><p id="dialogueLine"></p><div id="dialogueActions" class="dialogue-actions"></div></div>
+        <button class="dialogue-x" id="closeDialogue">✕</button>
+      </div>
+      <div class="toasts ui-pass" id="toasts"></div>
+      <div id="deathScreen" class="death-screen ui-pass hidden"><div class="death-symbol">✣</div><h2>YOU HAVE FALLEN</h2><p>Even in ash, embers remain.</p><button id="revive" class="primary-btn">RETURN TO HOLLOWVALE</button></div>
+    </main>
+    <footer class="game-footer"><span>STONE // ASHFALL</span><span id="saveStatus">● PROGRESS SAVED LOCALLY</span><span>CHAPTER I · THE AWAKENING</span></footer>
+  </div>
+  <script src="./game.js" defer></script>
+</body>
+</html>
